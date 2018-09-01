@@ -1,0 +1,351 @@
+<script type="text/x-red" data-template-name="set-defaults">
+    <div class="form-row" id="sfg-namerow0">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+
+    <div class="form-row" id="sdf-div-checkbox1">
+        <label >&nbsp;</label>
+        <input type="checkbox" checked="true" id="node-input-chbox_DoOutputToMessage" style="display:inline-block; width:15px; vertical-align:baseline;">
+        <label for="node-input-chbox_DoOutputToMessage" style="display:inline-block; width:200px; vertical-align:baseline; white-space: nowrap;">Also send to output <!--?_i18n--></label>&nbsp;
+    </div>
+
+    <!-- Main out setting compartment for hide / show-->
+    <div id="sdf-div-outsettings" class="form-row">
+
+        <div class="form-row" id="sdf-div-checkbox2">
+            <label >&nbsp;</label>
+            <!--?_i18n-->
+            <input type="checkbox" checked="false" id="node-input-chbox_SetCurrentToMsg" style="display:inline-block; width:15px; vertical-align:baseline;">
+            <label for="node-input-chbox_SetCurrentToMsg" style="display:inline-block; width:200px; vertical-align:baseline; white-space: nowrap;">If flow/global is already set, write its value to message</label>&nbsp;
+        </div>
+
+    <!-- Line: Output as .. msg.smth or directly to message, typedinput. -->
+        <div class="form-row" id="completerow">
+            <label for="sdfInputWheresend"">Output as<!--?_i18n--></label>
+            <input id="sdfInputWheresend" type="text" style="width:70%;">
+            <!--<input id="node-input-complete" type="hidden">-->
+        </div>
+
+        <!-- Line: Output type: Singe message / One message for each rule -->
+        <div class="form-row">
+            <label for="node-input-dropdown_HowManyMessages"> Output type</label>
+            <select id="node-input-dropdown_HowManyMessages" style="width:70%;">
+                <option value="single">Single message <!--?_i18n--> </option>
+                <option value="multiple">One message for each rule <!--?_i18n--></option>
+            </select>
+        </div>
+
+        <!-- Line: Label-less item, write/object | write value only -->
+        <div class="form-row" id="sdf-dropdown-obj-or-value-container">
+            <label for="node-input-dropdownObjOrVal" style="display:inline-block;text-align:right; width:100px; padding-right:10px; box-sizing:border-box;"></label>
+            <select id="node-input-dropdownObjOrVal">
+                <option value="keyValue">Write object (key and value) <!--?_i18n--> </option>
+                <option value="value">Write value only <!--?_i18n--></option>
+            </select>
+        </div>
+    </div>
+
+    <!-- "Rules" text and icon -->
+    <div class="form-row" style="margin-bottom:0;" id=sdf-rules-label-row1>
+        <!--<label><i class="fa fa-list"></i> <span data-i18n="change.label.rules"></span></label>--><!--?_i18n-->
+        <label><i class="fa fa-list"></i> Rules</span></label>
+    </div>
+
+    <!-- Rules dynamic item -->
+    <div class="form-row node-input-rule-container-row" id="node-input-rule-container-row">
+        <ol id="node-input-rule-container"></ol>
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="set-defaults">
+    <p>Sets default values and passes them on message according to configuration.</p>
+    
+</script>
+
+
+<script type="text/javascript">
+
+    getDefaultRule = function () {
+        return {p: "msg", pt: "flow", to: "", tot: "str"};
+    };
+
+    trimString = function(str, n){
+        str = String(str);
+        return (str.length > n) ? str.substr(0, n-1) + '…' : str;
+    };
+
+    var AllowedTypes = {full: "full", msg: "msg"};
+    var TypedInputFields = {val: "value", type: "type"};
+    myStoredSize = null;
+    myResizeFunction = null;
+
+    resizeHelper = function (size) {
+        if (myResizeFunction != null && size != null) {
+            myResizeFunction(size);
+        }
+    };
+
+    RED.nodes.registerType('set-defaults', {
+        category: 'function',
+        color: '#8bc34a',
+        defaults: {
+            name: {value: ""},
+            rules: {value: [getDefaultRule()]},
+            chbox_DoOutputToMessage: {value: true},
+            chbox_SetCurrentToMsg: {value: false},
+            howSend: {value: {text: "payload", type: AllowedTypes.msg, modifiedValue: ""}},
+            dropdown_HowManyMessages: {value: "single"},
+            dropdownObjOrVal: {value: "value"},
+            outputs: {value: 1}
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "sets.png",
+        label: function () {
+            return this.name || "set-defaults";
+        },
+        outputLabels: function (index) {
+
+            console.log("OutputLabels ", index);
+            if (!this.rules) {
+                return "";
+            }
+            var r = this.rules[index];
+            try {
+                switch (r.tot) {
+                    case "msg":
+                    case "flow":
+                    case "global":
+                        return "Set " + r.pt + "." + r.p + " TO " + r.tot + "." + r.to;
+                    case "num":
+                    case "str":
+                    case "bool":
+                        return "Set " + r.pt + "." + r.p + " TO " + r.to;
+                    case "json":
+                    case "jsonata":
+                        return "Set " + r.pt + "." + r.p + " TO " + r.tot + ": " + trimString(r.to, 70);
+                    case "bin":
+                        return "Set " + r.pt + "." + r.p + " TO buffer: " + trimString(r.to, 70);
+                    case "to_undefined":
+                        return "DELETE " + r.pt + "." + r.p;
+                    case "date":
+                        return "Set " + r.pt + "." + r.p + " TO timestamp.";
+                }
+            } catch (e) {
+                return "Rule " + index +", unknown output.";
+            }
+        },
+        oneditprepare: function () {
+
+            // Some variables (strings) to use in complicated thingy
+            var set = "Set";
+            var to = "to";
+
+            var node = this;
+            var outputCount = $("#node-input-outputs").val("{}");
+
+            function resizeRule(rule) {
+                var newWidth = rule.width();
+                // infos the number here sets width of input box inside rules box .... smaller number == wider input box
+                rule.find('.red-ui-typedInput').typedInput("width", newWidth - 70);
+            }
+
+            var dropHowsend = $("#node-input-dropdown_HowManyMessages");
+            /**
+             * Initial processing: hide those that need to be hidden.
+             */
+            if (dropHowsend.val() !== 'multiple') {
+                $("#sdf-dropdown-obj-or-value-container").hide();
+            }
+
+            // Hide sdf-div-outsettings on checkbox
+            $("#node-input-chbox_DoOutputToMessage").on("change", function () {
+                var outSettingsCompartment = $("#sdf-div-outsettings");
+                console.log("Checkbox switch happened.");
+                if ($("#node-input-chbox_DoOutputToMessage").is(':checked')) {
+                    console.log("Checkbox is checked.");
+                    //$("#node-input-file").attr("file", "file");
+                    outSettingsCompartment.show();
+                    resizeHelper(myStoredSize);
+                } else {
+                    console.log("Checkbox is unchecked.");
+                    //$("#node-input-file").removeAttr("file");
+                    outSettingsCompartment.hide();
+                    resizeHelper(myStoredSize);
+                }
+            });
+
+            // noinspection JSJQueryEfficiency
+            /**
+             *  Configuring write target dropdown+inputbox
+             */
+            var guiItemWhereSend = $("#sdfInputWheresend");
+            guiItemWhereSend.typedInput({
+                types: [AllowedTypes.msg, {value: AllowedTypes.full, label: "Directly to message", hasValue: false}]
+            });
+            guiItemWhereSend.typedInput('type', node.howSend.type);
+            if (this.howSend.text) {
+                guiItemWhereSend.typedInput('value', node.howSend.text);
+                this.howSend.modifiedValue = node.howSend.text;
+            }
+            guiItemWhereSend.change(function () {
+                var typ = guiItemWhereSend.typedInput("type");
+                if (typ === AllowedTypes.msg) {
+                    if (guiItemWhereSend.val()) {
+                        node.howSend.modifiedValue = guiItemWhereSend.val();
+                    } else if (node.howSend.modifiedValue) {
+                        guiItemWhereSend.typedInput(TypedInputFields.val, node.howSend.modifiedValue);
+                    }
+                }
+            });
+
+            /**
+             *  Show additional dropdown when changing single or multiple message options
+             */
+            dropHowsend.on("change", function () {
+                if (dropHowsend.val() === 'multiple') {
+                    $("#sdf-dropdown-obj-or-value-container").show();
+                    resizeHelper(myStoredSize);
+                } else {
+                    $("#sdf-dropdown-obj-or-value-container").hide();
+                    resizeHelper(myStoredSize);
+                }
+            });
+
+            /**
+             * Main rule display window
+             */
+            $('#node-input-rule-container').css('min-height', '300px').css('min-width', '450px').editableList({
+                addItem: function (container, i, opt) {
+                    var rule = opt;
+                    if (!rule.hasOwnProperty('pt')) {
+                        rule = getDefaultRule();
+                    }
+                    if (!rule.tot) {
+                        if (rule.to.indexOf("msg.") === 0 && !rule.tot) {
+                            rule.to = rule.to.substring(4);
+                            rule.tot = "msg";
+                        } else {
+                            rule.tot = "str";
+                        }
+                    }
+                    container.css({
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap'
+                    });
+                    var row1 = $('<div/>').appendTo(container);
+                    var row2 = $('<div/>', {style: "margin-top:8px;"}).appendTo(container);
+                    var selectField = $('<div/>', {style: "display:inline-block;text-align:right; width:50px; padding-right:10px; box-sizing:border-box;"})
+                        .text(set)
+                        .appendTo(row1);
+                    var propertyName = $('<input/>', {class: "node-input-rule-property-name", type: "text"})
+                        .appendTo(row1)
+                        .typedInput({types: ['msg', 'flow', 'global']});
+                    $('<div/>', {style: "display:inline-block;text-align:right; width:50px; padding-right:10px; box-sizing:border-box;"})
+                        .text(to)
+                        .appendTo(row2);
+                    var propertyValue = $('<input/>', {class: "node-input-rule-property-value", type: "text"})
+                        .appendTo(row2)
+                        .typedInput({
+                            default: 'str',
+                            // ?_i18n Date Time labels?
+                            types: ["msg", "flow", "global", "str", "num", "bool", "json", "bin", "date", "jsonata",
+                                {value: "to_undefined", label: "Remove value", hasValue: false}
+                            ]
+                        });
+
+                    selectField.val("Set");
+                    propertyName.typedInput('value', rule.p);
+                    propertyName.typedInput('type', rule.pt);
+                    propertyValue.typedInput('value', rule.to);
+                    propertyValue.typedInput('type', rule.tot);
+
+                    var newWidth = $("#node-input-rule-container").width();
+                    resizeRule(container);
+                },
+                resizeItem: resizeRule,
+                removable: true,
+                sortable: true
+            });
+            // console.log("Location 2");
+            if (!this.rules) {
+                var rule = {
+                    p: this.property,
+                    pt: "msg"
+                };
+
+                rule.to = this.to;
+
+                delete this.to;
+                delete this.from;
+                delete this.reg;
+                delete this.action;
+                delete this.property;
+
+                this.rules = [rule];
+            }
+            for (var i = 0; i < this.rules.length; i++) {
+                var rule = this.rules[i];
+                $("#node-input-rule-container").editableList('addItem', rule);
+            }
+            /**
+             * Actual function that does the resizing.
+             */
+            myResizeFunction = function (size) {
+                // console.log("NOW oneditresize");
+                myStoredSize = size;
+                // console.log("Size is: " + size.height);
+                var rows = $("#dialog-form>div:not(.node-input-rule-container-row)");
+                var height = size.height;
+                for (var i = 0; i < rows.size(); i++) {
+                    height -= rows[i].offsetParent === null ? 0 : $(rows[i]).outerHeight(true);
+                }
+                var editorRow = $("#dialog-form>div.node-input-rule-container-row");
+                height -= (parseInt(editorRow.css("marginTop")) + parseInt(editorRow.css("marginBottom")));
+                // infos line that does actual resizing
+                $("#node-input-rule-container").editableList('height', height);
+            };
+        }
+        ,
+        oneditsave: function () {
+            console.log("onEditSave");
+            var rules = $("#node-input-rule-container").editableList('items');
+            var node = this;
+            node.rules = [];
+            rules.each(function (i) {
+                var rule = $(this);
+                var r = {
+                    p: rule.find(".node-input-rule-property-name").typedInput('value'),
+                    pt: rule.find(".node-input-rule-property-name").typedInput('type')
+                };
+                r.to = rule.find(".node-input-rule-property-value").typedInput('value');
+                r.tot = rule.find(".node-input-rule-property-value").typedInput('type');
+                node.rules.push(r);
+            });
+
+            var guiItemWhereSend = $("#sdfInputWheresend");
+            var typ = guiItemWhereSend.typedInput('type');
+            if (typ === AllowedTypes.msg) {
+                //   console.log("If true, setting this.wheresend1.text to value " + guiItemWhereSend.val());
+                node.howSend.text = guiItemWhereSend.val();
+            } else {
+                node.howSend.text = node.howSend.modifiedValue;
+                //    console.log("Not setting anything .. value is still " + guiItemWhereSend.val());
+            }
+            // console.log("Storing, type is " + typ);
+            node.howSend.type = typ;
+            /**
+             * Draw number of outputs according to settings
+             */
+            if ($("#node-input-dropdown_HowManyMessages").val() === 'multiple' && $("#node-input-chbox_DoOutputToMessage").is(':checked')) {
+                node.outputs = node.rules.length;
+            } else {
+                node.outputs = 1;
+            }
+        }
+        ,
+        oneditresize: resizeHelper
+    })
+    ;
+</script>

@@ -1,0 +1,20 @@
+{
+  "name": "node-red-contrib-set-defaults",
+  "version": "0.9.0",
+  "node-red": {
+    "nodes": {
+      "set-defaults": "set-defaults.js"
+    }
+  },
+  "scripts": {
+    "test": "mocha \"test/**/*_spec.js\"",
+    "test1_nr1": "mocha --grep \"should set flow parameters 1_nr1 and multi flow parameters 2_nr1\" \"test/**/*_spec.js\"",
+    "test1_nr8": "mocha --grep \"should set msg and flow and msg explicit, multilevel, 1_nr8 and 2_nr8\" \"test/**/*_spec.js\"",
+    "test3_nr2": "mocha --grep \"should set global, msg only if not set already\" \"test/**/*_spec.js\""
+  },
+  "devDependencies": {},
+  "dependencies": {
+    "mocha": "^5.2.0",
+    "node-red-node-test-helper": "^0.1.8"
+  }
+}
