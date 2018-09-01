@@ -5,19 +5,6 @@ var commonImport = require("../common/utils");
 var setHierarchicalNoOverwrite = commonImport.hierarchicSet;
 
 describe('Common methods tests', function () {
-
-    // it('testJsNullChecks', function (done) {
-    //     var undef = undefined;
-    //     var _n = null;
-    //     var _f = false;
-    //     var _t = true;
-    //     var _0 = 0;
-    //     var _neg1= -1;
-    //     var _1 = 1;
-    //     var _true = "true";
-    //     var _false = "false";
-    // });
-
     it('should set value if not already set, recursively', function (done) {
         var msg = {};
         var return1 = setHierarchicalNoOverwrite("what", "value", msg).obj;

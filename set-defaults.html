@@ -17,7 +17,7 @@
             <label >&nbsp;</label>
             <!--?_i18n-->
             <input type="checkbox" checked="false" id="node-input-chbox_SetCurrentToMsg" style="display:inline-block; width:15px; vertical-align:baseline;">
-            <label for="node-input-chbox_SetCurrentToMsg" style="display:inline-block; width:200px; vertical-align:baseline; white-space: nowrap;">If flow/global is already set, write its value to message</label>&nbsp;
+            <label for="node-input-chbox_SetCurrentToMsg" style="display:inline-block; width:200px; vertical-align:baseline; white-space: nowrap;">If context is already set, write its value to message</label>&nbsp;
         </div>
 
     <!-- Line: Output as .. msg.smth or directly to message, typedinput. -->
@@ -58,21 +58,15 @@
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="set-defaults">
-    <p>Sets default values and passes them on message according to configuration.</p>
-    
-</script>
-
-
 <script type="text/javascript">
 
     getDefaultRule = function () {
         return {p: "msg", pt: "flow", to: "", tot: "str"};
     };
 
-    trimString = function(str, n){
+    trimString = function (str, n) {
         str = String(str);
-        return (str.length > n) ? str.substr(0, n-1) + '…' : str;
+        return (str.length > n) ? str.substr(0, n - 1) + '…' : str;
     };
 
     var AllowedTypes = {full: "full", msg: "msg"};
@@ -133,7 +127,7 @@
                         return "Set " + r.pt + "." + r.p + " TO timestamp.";
                 }
             } catch (e) {
-                return "Rule " + index +", unknown output.";
+                return "Rule " + index + ", unknown output.";
             }
         },
         oneditprepare: function () {
@@ -343,9 +337,74 @@
             } else {
                 node.outputs = 1;
             }
-        }
-        ,
+        },
         oneditresize: resizeHelper
-    })
-    ;
+    });
+</script>
+
+<script type="text/x-red" data-help-name="set-defaults">
+<p>Can set properties of context or msg to the configured values. Only sets them if they are undefined. Set properties
+    can be
+    sent to output (msg). Also has the ability to set properties hierarchically or clear existing value.</p>
+
+<p>Node is similar to change node, but it will only set values that are previously undefined. So the node can be used to
+    set some properties to defaults.</p>
+
+<h3>Details</h3>
+<p>Rules will be evaluated from top to bottom. So if for example, two rules try to modify <code>msg.topic</code>, only
+    first one will successfully accomplish the task.</p><p> Node configuration:</p>
+<dl class="message-properties">
+    <dt>Also send to output</dt>
+    <dd>Each rule that is successfully applied will also write value to msg for output. Details how values are written
+        can be further configured. <b>Note</b> that this can overwrite current value of property on <code>msg</code> -
+        unlike main rules functionality, additional writing to <code>msg</code> does not check whether value exists
+        before or not.
+    </dd>
+
+    <dt>If context is already set, write its value to message</dt>
+    <dd>By default, context rule only writes to message if it set the value (was not set before). If this checkbox is
+        checked, then it will write also if it does not change anything. It will write current value of context property
+        and not the value that is supposed to be set to context.
+    </dd>
+
+    <dt>Output as</dt>
+    <dd>Context rules can write directly to message or to some property.
+    </dd>
+
+    <dt>Output type</dt>
+    <dd>It is possible to configure to send a message for each of the rules. Doing that will create a copy of input
+        message, then each rule only modifies it's own copy.
+    </dd>
+
+    <dt>Output type - line 2</dt>
+    <dd>Here it is possible to configure whether context rules write to <code>msg</code> value only or whole object (key
+        and value). This is only available if you write one message to each rule. When outputting as single message,
+        output is always key and value. If using "Write value only" together with "Directly to message", the value will
+        be written to <code>msg.payload</code>.
+    </dd>
+
+    <dt>Rules</dt>
+    <dd>Add as many rules as you want, configuring what they set and to what value. While setting the rules, note the
+        following:
+        <ol>
+            <li>
+                All the rules are capable of setting properties hierarchically. For example, rule can set <code>msg.prop.subprop.another</code>
+                to "value", even when <code>msg.prop</code> is undefined.
+            </li>
+            <li>
+                With the exception of "Remove value", all rules will only do their job if the property they are setting
+                is previously undefined. "Remove value" is an exception: it will always clear the property.
+            </li>
+            <li>
+                When setting to <code>flow</code> or <code>global</code>, the same property and value will also be
+                written to <code>msg</code>, according to the configuration above (if the functionality is enabled).
+                Again, there is an exception: "Remove value" will not write anything to <code>msg</code> when used with
+                <code>flow</code> or <code>global</code>.
+            </li>
+        </ol>
+    </dd>
+</dl>
+<h3>Output</h3>
+<p>Output is the message that came to input with changes from this node. If multi-message output is enabled, every
+    output message is a copy of input message with single rule changes applied.</p>
 </script>

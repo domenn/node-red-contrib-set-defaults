@@ -1,7 +1,3 @@
-// Example things to put into package:
-// "test": "mocha --grep \"should set multilevel flow global and msg 2_nr2\" \"test/**/*_spec.js\""
-// "test": "mocha \"test/**/*_spec.js\""
-
 var should = require("should");
 var helper = require("node-red-node-test-helper");
 var setDefaultsNodeClass = require("../set-defaults.js");
@@ -87,7 +83,7 @@ describe('set-defaults Node', function () {
     it('should set flow parameters 1_nr1 and multi flow parameters 2_nr1', function (done) {
         this.timeout(210);
         // @formatter:off
-        var flow = testFlows.flow1_nr1;
+        var flow = convertLinkOut(testFlows.flow1_nr1);
         // @formatter:on
         /**
          * // INFOS documentation of load function, copyPaste
@@ -99,7 +95,7 @@ describe('set-defaults Node', function () {
          */
         helper.load(setDefaultsNodeClass, flow, function () {
             var sdnode = helper.getNode("33a32fef.ee55a");
-            var sinkNode = helper.getNode("37123412.258e6c");
+            var sinkNode = helper.getNode("a19f4517.9aafc8");
             sinkNode.on("input", function (msg) {
                 try {
                     should.equal(msg.payload, commonMsgTestSimple().payload);
@@ -122,7 +118,7 @@ describe('set-defaults Node', function () {
     it("should set flow global and msg 1_nr2", function (done) {
         this.timeout(1200);
         // @formatter:off
-        var flow = testFlows.flow1_nr2;
+        var flow = convertLinkOut(testFlows.flow1_nr2);
         // @formatter:on
         helper.load(setDefaultsNodeClass, flow, function () {
             var sinkNode = helper.getNode("a19f4517.9aafc8");
@@ -224,10 +220,10 @@ describe('set-defaults Node', function () {
 
     it('should set only if not set already 3_nr1', function (done) {
         this.timeout(160);
-        var flow = testFlows.flow1_nr1;
+        var flow = convertLinkOut(testFlows.flow1_nr1);
         helper.load(setDefaultsNodeClass, flow, function () {
             var sdnode = helper.getNode("33a32fef.ee55a");
-            var sinkNode = helper.getNode("37123412.258e6c");
+            var sinkNode = helper.getNode("a19f4517.9aafc8");
             sinkNode.context().flow.set("first", "vts");
             sinkNode.on("input", function (msg) {
                 // MSG unchanged
