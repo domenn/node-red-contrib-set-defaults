@@ -7,6 +7,9 @@
     <JSON>
       <option name="OBJECT_WRAPPING" value="0" />
     </JSON>
+    <MarkdownNavigatorCodeStyleSettings>
+      <option name="RIGHT_MARGIN" value="72" />
+    </MarkdownNavigatorCodeStyleSettings>
     <codeStyleSettings language="JSON">
       <option name="WRAP_ON_TYPING" value="0" />
     </codeStyleSettings>
