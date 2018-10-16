@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="RunNodeRedWindows" type="NodeJSConfigurationType" factoryName="Node.js" path-to-js-file="$USER_HOME$/AppData/Roaming/npm/node_modules/node-red/red.js" working-dir="$USER_HOME$/.node-red">
+    <method v="2" />
+  </configuration>
+</component>
